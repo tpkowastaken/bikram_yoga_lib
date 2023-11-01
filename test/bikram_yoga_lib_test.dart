@@ -11,7 +11,23 @@ void main() {
     });
 
     test('rezervace', () async {
-      expect(await bikramYoga.rezervovat(30619), true);
+      await Future.delayed(Duration(milliseconds: 200));
+      await bikramYoga.login(envSecrets['EMAIL']!, envSecrets['PASSWORD']!);
+      RezervacePage rezervacePage = await bikramYoga.ziskatRezervace();
+      await bikramYoga.rezervovat(rezervacePage.rezervace['Pankrac']![rezervacePage.rezervace.length - 1].idRezervace);
+      await Future.delayed(Duration(milliseconds: 200));
+      rezervacePage = await bikramYoga.ziskatRezervace();
+      bool rezervaceUspesna = rezervacePage.rezervace['Pankrac']![rezervacePage.rezervace.length - 1].rezervovano;
+      await Future.delayed(Duration(milliseconds: 500));
+      await bikramYoga.rezervovat(rezervacePage.rezervace['Pankrac']![rezervacePage.rezervace.length - 1].idRezervace);
+      expect(rezervaceUspesna, true);
+    });
+
+    test('rezervace nejsou prázdné', () async {
+      await Future.delayed(Duration(milliseconds: 200));
+      await bikramYoga.login(envSecrets['EMAIL']!, envSecrets['PASSWORD']!);
+      RezervacePage rezervacePage = await bikramYoga.ziskatRezervace();
+      expect(rezervacePage.rezervace['Pankrac']!.length, greaterThan(0));
     });
   });
 }
