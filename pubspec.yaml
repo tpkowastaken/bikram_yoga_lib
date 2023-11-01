@@ -1,7 +1,7 @@
 name: bikram_yoga_lib
-description: A sample command-line application.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+description: Knihovna pro komunikaci s bikram Yoga
+version: 0.1.0
+repository: https://github.com/tpkowastaken/bikram_yoga_lib
 
 environment:
   sdk: ^3.1.2
@@ -10,7 +10,6 @@ environment:
 dependencies:
   html: ^0.15.4
   http: ^1.1.0
-  # path: ^1.8.0
 
 dev_dependencies:
   dotenv: ^4.2.0
