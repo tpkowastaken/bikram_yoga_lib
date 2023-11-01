@@ -2,14 +2,28 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-
-BikramYoga bikramYoga = BikramYoga();
+import 'package:html/parser.dart' as parser;
+import 'package:html/dom.dart' as dom;
 
 enum PossibleFails {
   emailAlreadyExists,
   nameAlreadyExists,
   success,
   networkError,
+}
+
+class Rezervace {
+  DateTime cas;
+  String lektor;
+  int idRezervace;
+  bool rezervovano;
+  Rezervace({required this.cas, required this.lektor, required this.idRezervace, required this.rezervovano});
+}
+
+class RezervacePage {
+  //vodičkova, pankrác, live stream
+  Map<String, List<Rezervace>> rezervace = {};
+  RezervacePage({required this.rezervace});
 }
 
 class BikramYoga {
@@ -131,6 +145,70 @@ class BikramYoga {
     } catch (error) {
       return PossibleFails.networkError;
     }
+  }
+
+  List<Rezervace> parseRezervace(String id, String html) {
+    List<Rezervace> rezervace = [];
+    dom.Document document = parser.parse(html);
+    late dom.Element pankrac;
+    try {
+      pankrac = document.getElementById(id)!;
+    } catch (e) {
+      throw ('chyba při získání rezervací');
+    }
+    dom.Document pankracDocument = parser.parse(pankrac.innerHtml);
+    dom.Element pankracNode = pankracDocument.firstChild!.children[1].children[0].children[1];
+
+    for (int i = 0; i < pankracNode.children.length; i++) {
+      dom.Element child = pankracNode.children[i];
+      if (child.children.isEmpty) continue;
+      String datum = child.children[0].text;
+      String cas = child.children[2].text;
+      DateTime casDateTime = DateTime(
+        int.parse(datum.split('.')[2]),
+        int.parse(datum.split('.')[1]),
+        int.parse(datum.split('.')[0]),
+        int.parse(cas.split(':')[0]),
+        int.parse(cas.split(':')[1]),
+      );
+      String lektor = child.children[3].text;
+      String idRezervace = child.children[4].children[0].attributes['data-id']!;
+      bool rezervovano = child.children[4].children[0].text == 'Rezervovat' ? false : true;
+      rezervace.add(
+        Rezervace(
+          cas: casDateTime,
+          lektor: lektor,
+          idRezervace: int.parse(idRezervace),
+          rezervovano: rezervovano,
+        ),
+      );
+    }
+    return rezervace;
+  }
+
+  //vrátí seznam rezervací
+  Future<RezervacePage> ziskatRezervace() async {
+    await completer.future;
+    Map<String, String> cookies = {
+      "PHPSESSID": phpsessid,
+      "web_lang": "cs",
+      "login": Uri.parse(cookieEmail).toString(),
+    };
+
+    // Combine the cookies into a single string
+    String cookieString = cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
+    // Create a Map to hold the headers
+    Map<String, String> headers = {
+      "authority": "www.bikramyoga.cz",
+      "cookie": cookieString,
+    };
+    var response = await http.get(Uri.parse("https://www.bikramyoga.cz/rezervace"), headers: headers);
+    //File("response.html").writeAsString(response.body);
+    RezervacePage rezervacePage = RezervacePage(rezervace: {});
+    rezervacePage.rezervace['Pankrac'] = parseRezervace('Pankrac', response.body);
+    rezervacePage.rezervace['Vodickova'] = parseRezervace('Vodickova', response.body);
+    rezervacePage.rezervace['OnlineClass'] = parseRezervace('OnlineClass', response.body);
+    return rezervacePage;
   }
 
   //vrátí true pokud se rezervace povedla jinak vrátí false
