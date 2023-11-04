@@ -32,4 +32,14 @@ Future<void> main() async {
     Rezervace rezervaceItem = rezervace.rezervace['OnlineClass']![i];
     print('${rezervaceItem.cas}: ${rezervaceItem.lekce}, ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idRezervace}');
   }
+
+  Uzivatel uzivatel = await bikramYoga.ziskatUdajeKlienta();
+  print(uzivatel.jmeno);
+  print(uzivatel.datumNarozeni);
+  print(uzivatel.adresa);
+  print(uzivatel.zeme);
+  print(uzivatel.telCislo);
+  print(uzivatel.produkt);
+  print(uzivatel.produktExpirace);
+  print(uzivatel.produktProdlouzit);
 }

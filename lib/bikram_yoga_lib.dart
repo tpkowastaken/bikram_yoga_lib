@@ -12,13 +12,40 @@ enum PossibleFails {
   networkError,
 }
 
+class Uzivatel {
+  String jmeno;
+  DateTime? datumNarozeni;
+  String adresa;
+  String zeme;
+  int? telCislo;
+  String produkt;
+  DateTime? produktExpirace;
+  bool produktProdlouzit;
+  Uzivatel({
+    required this.jmeno,
+    required this.datumNarozeni,
+    required this.adresa,
+    required this.zeme,
+    required this.telCislo,
+    required this.produkt,
+    required this.produktExpirace,
+    required this.produktProdlouzit,
+  });
+}
+
 class Rezervace {
   DateTime cas;
   String lekce;
   String lektor;
   int idRezervace;
   bool rezervovano;
-  Rezervace({required this.cas, required this.lekce, required this.lektor, required this.idRezervace, required this.rezervovano});
+  Rezervace({
+    required this.cas,
+    required this.lekce,
+    required this.lektor,
+    required this.idRezervace,
+    required this.rezervovano,
+  });
 }
 
 class RezervacePage {
@@ -177,7 +204,7 @@ class BikramYoga {
         int.parse(cas.split(':')[1]),
       );
 
-      // Split class and last word
+      // Rozděluje lektora na lekci a lektora
       String lekce;
       String lektor;
       List<String> words = lekceLektor.split(' ');
@@ -283,5 +310,78 @@ class BikramYoga {
     } finally {
       client.close();
     }
+  }
+
+  Uzivatel parseUzivatel(String html) {
+    dom.Document document = parser.parse(html);
+    late dom.Element uzivatelData;
+    try {
+      uzivatelData = document.getElementById("user-information")!;
+    } catch (e) {
+      throw ('Chyba při získání uživatelských dat');
+    }
+    dom.Document uzivatelDataDocument = parser.parse(uzivatelData.innerHtml);
+    dom.Element uzivatelDataNode = uzivatelDataDocument.firstChild!.children[1].children[0].children[1];
+
+    String jmeno = uzivatelDataDocument.firstChild!.children[1].children[0].children[0].text;
+    String datumNarozeni = uzivatelDataNode.children[0].children[1].text;
+    String adresa = uzivatelDataNode.children[1].children[1].text;
+    String zeme = uzivatelDataNode.children[2].children[1].text;
+    int? telCislo = int.tryParse(uzivatelDataNode.children[3].children[1].text.replaceAll(" ", ""));
+    String produkt = uzivatelDataNode.children[4].children[1].text;
+    String produktExpirace = uzivatelDataNode.children[5].children[1].text;
+    bool produktProdlouzit = false;
+    if (uzivatelDataNode.children[5].children.length > 2) {
+      produktProdlouzit = true;
+    }
+
+    DateTime? datumNarozeniDateTime;
+    if (int.tryParse(datumNarozeni) != null) {
+      datumNarozeniDateTime = DateTime(
+        int.parse(datumNarozeni.split('.')[2]),
+        int.parse(datumNarozeni.split('.')[1]),
+        int.parse(datumNarozeni.split('.')[0]),
+      );
+    }
+
+    DateTime? datumExpiraceDateTime;
+    if (produktExpirace.trim() != "No product") {
+      datumExpiraceDateTime = DateTime(
+        int.parse(produktExpirace.split('.')[2]),
+        int.parse(produktExpirace.split('.')[1]),
+        int.parse(produktExpirace.split('.')[0]),
+      );
+    }
+
+    return Uzivatel(
+        jmeno: jmeno,
+        datumNarozeni: datumNarozeniDateTime,
+        adresa: adresa,
+        zeme: zeme,
+        telCislo: telCislo,
+        produkt: produkt,
+        produktExpirace: datumExpiraceDateTime,
+        produktProdlouzit: produktProdlouzit);
+  }
+
+  Future<Uzivatel> ziskatUdajeKlienta() async {
+    await completer.future;
+    Map<String, String> cookies = {
+      "PHPSESSID": phpsessid,
+      "web_lang": "cs",
+      "login": Uri.parse(cookieEmail).toString(),
+    };
+
+    // Combine the cookies into a single string
+    String cookieString = cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
+    // Create a Map to hold the headers
+    Map<String, String> headers = {
+      "authority": "www.bikramyoga.cz",
+      "cookie": cookieString,
+    };
+    var response = await http.get(Uri.parse("https://www.bikramyoga.cz/informace-o-uzivateli"), headers: headers);
+    //File("response.html").writeAsString(response.body);
+    Uzivatel uzivatel = parseUzivatel(response.body);
+    return uzivatel;
   }
 }
