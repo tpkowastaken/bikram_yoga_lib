@@ -17,7 +17,7 @@ Future<void> main() async {
   print('Pankrac');
   for (int i = 0; i < rezervace.rezervace['Pankrac']!.length; i++) {
     Rezervace rezervaceItem = rezervace.rezervace['Pankrac']![i];
-    print('${rezervaceItem.cas}: ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idRezervace}');
+    print('${rezervaceItem.cas}: ${rezervaceItem.lekce}, ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idRezervace}');
     if (i == rezervace.rezervace['Pankrac']!.length - 1) {
       await bikramYoga.rezervovat(rezervaceItem.idRezervace);
     }
@@ -25,11 +25,11 @@ Future<void> main() async {
   print('Vodickova');
   for (int i = 0; i < rezervace.rezervace['Vodickova']!.length; i++) {
     Rezervace rezervaceItem = rezervace.rezervace['Vodickova']![i];
-    print('${rezervaceItem.cas}: ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idRezervace}');
+    print('${rezervaceItem.cas}: ${rezervaceItem.lekce}, ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idRezervace}');
   }
   print('Online');
   for (int i = 0; i < rezervace.rezervace['OnlineClass']!.length; i++) {
     Rezervace rezervaceItem = rezervace.rezervace['OnlineClass']![i];
-    print('${rezervaceItem.cas}: ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idRezervace}');
+    print('${rezervaceItem.cas}: ${rezervaceItem.lekce}, ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idRezervace}');
   }
 }
