@@ -1,6 +1,6 @@
 ## 0.2.0
 
-- Přidán název lekce krom pouze lektora
+- Přidán název lekce místo pouze lektora
 
 ## 0.1.0
 
