@@ -30,7 +30,7 @@ jobs:
       # Testing pro bikramYoga
       - name: Credentials pro bikram yoga
         run: |
-          echo "USER= '${{ secrets.EMAIL }}'" >> .env
+          echo "EMAIL= '${{ secrets.EMAIL }}'" >> .env
           echo "PASSWORD= '${{ secrets.PASS }}'" >> .env
 
       - name: test pro Bikram Yoga
