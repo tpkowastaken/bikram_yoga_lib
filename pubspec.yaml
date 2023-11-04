@@ -1,6 +1,6 @@
 name: bikram_yoga_lib
 description: Knihovna pro komunikaci s bikram Yoga
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/tpkowastaken/bikram_yoga_lib
 
 environment:
