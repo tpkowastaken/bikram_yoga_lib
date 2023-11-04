@@ -1,3 +1,7 @@
+## 0.3.0
+
+- Přidáno info o uživateli
+
 ## 0.2.0
 
 - Přidán název lekce místo pouze lektora
