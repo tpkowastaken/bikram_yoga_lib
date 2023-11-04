@@ -14,10 +14,11 @@ enum PossibleFails {
 
 class Rezervace {
   DateTime cas;
+  String lekce;
   String lektor;
   int idRezervace;
   bool rezervovano;
-  Rezervace({required this.cas, required this.lektor, required this.idRezervace, required this.rezervovano});
+  Rezervace({required this.cas, required this.lekce, required this.lektor, required this.idRezervace, required this.rezervovano});
 }
 
 class RezervacePage {
@@ -164,6 +165,10 @@ class BikramYoga {
       if (child.children.isEmpty) continue;
       String datum = child.children[0].text;
       String cas = child.children[2].text;
+      String lekceLektor = child.children[3].text;
+      String idRezervace = child.children[4].children[0].attributes['data-id']!;
+      bool rezervovano = child.children[4].children[0].text == 'Rezervovat' ? false : true;
+
       DateTime casDateTime = DateTime(
         int.parse(datum.split('.')[2]),
         int.parse(datum.split('.')[1]),
@@ -171,12 +176,38 @@ class BikramYoga {
         int.parse(cas.split(':')[0]),
         int.parse(cas.split(':')[1]),
       );
-      String lektor = child.children[3].text;
-      String idRezervace = child.children[4].children[0].attributes['data-id']!;
-      bool rezervovano = child.children[4].children[0].text == 'Rezervovat' ? false : true;
+
+      // Split class and last word
+      String lekce;
+      String lektor;
+      List<String> words = lekceLektor.split(' ');
+      String posledniSlovo = words.last;
+
+      if (lekceLektor == "ADVANCE" || lekceLektor == "Detska lekce" || int.tryParse(posledniSlovo) != null) {
+        // Pro "ADVANCE" nebo "Detska Lekce," není jméno lektora
+        lekce = lekceLektor;
+        lektor = "";
+      } else if (words.length == 1 || (words.length == 2 && words[1].contains('.'))) {
+        // Pro lekce kde lekceLektor ma 1 nebo 2 slova a 2. obsahuje tečku ("."), myslíme si že to je jméno lektora
+        lekce = "Bikram Yoga Class 90";
+        lektor = lekceLektor;
+      } else if (posledniSlovo.contains('.')) {
+        int lastIndex = words.length - 1;
+        lekce = words.sublist(0, lastIndex - 1).join(' '); // Spojit všechny slova kromě posledních 2(jméno lektora)
+        lektor = '${words[lastIndex - 1]} $posledniSlovo'; // Spojit poslední 2 slova pro jméno lektora
+      } else if (posledniSlovo.isEmpty) {
+        lekce = "Bikram Yoga Class 90";
+        lektor = words.sublist(0, words.length - 1).join(" ");
+      } else {
+        // Když poslední slovo neobsahuje tečku ("."), myslíme si že to je jméno lektora
+        lekce = words.sublist(0, words.length - 1).join(' '); //  Spojit vše kromě posledního slova
+        lektor = posledniSlovo; // Poslední slovo je jméno lektora
+      }
+
       rezervace.add(
         Rezervace(
           cas: casDateTime,
+          lekce: lekce,
           lektor: lektor,
           idRezervace: int.parse(idRezervace),
           rezervovano: rezervovano,
