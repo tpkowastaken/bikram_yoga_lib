@@ -32,4 +32,14 @@ Future<void> main() async {
     Rezervace rezervaceItem = rezervace.rezervace['OnlineClass']![i];
     print('${rezervaceItem.cas}: ${rezervaceItem.lekce}, ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idRezervace}');
   }
+
+  Uzivatel uzivatel = await bikramYoga.ziskatUdajeKlienta();
+  print("Jméno: ${uzivatel.jmeno}");
+  print("Datum narození: ${uzivatel.datumNarozeni}");
+  print("Adresa: ${uzivatel.adresa}");
+  print("Země: ${uzivatel.zeme}");
+  print("Telefonní číslo: ${uzivatel.telCislo}");
+  print("Produkt: ${uzivatel.produkt}");
+  print("Expirace: ${uzivatel.produktExpirace}");
+  print("Prodloužit?: ${uzivatel.produktProdlouzit}");
 }
