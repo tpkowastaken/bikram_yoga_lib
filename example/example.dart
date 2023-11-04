@@ -34,12 +34,12 @@ Future<void> main() async {
   }
 
   Uzivatel uzivatel = await bikramYoga.ziskatUdajeKlienta();
-  print(uzivatel.jmeno);
-  print(uzivatel.datumNarozeni);
-  print(uzivatel.adresa);
-  print(uzivatel.zeme);
-  print(uzivatel.telCislo);
-  print(uzivatel.produkt);
-  print(uzivatel.produktExpirace);
-  print(uzivatel.produktProdlouzit);
+  print("Jméno: ${uzivatel.jmeno}");
+  print("Datum narození: ${uzivatel.datumNarozeni}");
+  print("Adresa: ${uzivatel.adresa}");
+  print("Země: ${uzivatel.zeme}");
+  print("Telefonní číslo: ${uzivatel.telCislo}");
+  print("Produkt: ${uzivatel.produkt}");
+  print("Expirace: ${uzivatel.produktExpirace}");
+  print("Prodloužit?: ${uzivatel.produktProdlouzit}");
 }

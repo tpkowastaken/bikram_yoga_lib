@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart' as dom;
 
+/// enumerátor možných chyb při registraci
 enum PossibleFails {
   emailAlreadyExists,
   nameAlreadyExists,
@@ -33,11 +34,26 @@ class Uzivatel {
   });
 }
 
+/// classa reprezentující jednu rezervaci
+/// cas - datum a čas lekce
+/// lekce - název lekce
+/// lektor - jméno lektora
+/// idRezervace - id rezervace, pro rezervaci
+/// rezervovano - true pokud je lekce rezervována, jinak false
 class Rezervace {
+  /// datum a čas lekce
   DateTime cas;
+
+  /// lekce - název lekce
   String lekce;
+
+  /// jméno lektora
   String lektor;
+
+  /// id rezervace, pro rezervaci
   int idRezervace;
+
+  /// true pokud je lekce rezervována, jinak false
   bool rezervovano;
   Rezervace({
     required this.cas,
@@ -48,12 +64,14 @@ class Rezervace {
   });
 }
 
+/// classa poskytující všchny informace na stránce ohledně rezervací
 class RezervacePage {
   //vodičkova, pankrác, live stream
   Map<String, List<Rezervace>> rezervace = {};
   RezervacePage({required this.rezervace});
 }
 
+/// classa pro komunikaci s bikramyoga.cz
 class BikramYoga {
   String phpsessid = '';
   String cookieEmail = '';
@@ -62,6 +80,8 @@ class BikramYoga {
   BikramYoga() {
     _doInitialRequest();
   }
+
+  /// provede inicializaci. Získá PHPSESSID, které nás identifikuje na serveru
   Future<void> _doInitialRequest() async {
     try {
       Uri url = Uri.parse("https://www.bikramyoga.cz/");
@@ -88,7 +108,10 @@ class BikramYoga {
     }
   }
 
-  //vráti true pokud se přihlášení povedlo jinak vrátí false
+  ///vráti true pokud se přihlášení povedlo jinak vrátí false
+  ///[email] email pro přihlášení
+  ///[password] heslo pro přihlášení
+  ///je potřeba zavolat před rezervací
   Future<bool> login(String email, String password) async {
     await completer.future;
     bool success = false;
@@ -122,6 +145,14 @@ class BikramYoga {
     return success;
   }
 
+  /// registrace na bikramyoga.cz
+  /// [firstName] křestní jméno
+  /// [lastName] příjmení
+  /// [email] email
+  /// vrátí PossibleFails.success pokud se registrace povedla
+  /// vrátí PossibleFails.emailAlreadyExists pokud se email již používá
+  /// vrátí PossibleFails.nameAlreadyExists pokud se jméno již používá
+  /// vrátí PossibleFails.networkError pokud se registrace nepovedla z důvodu sítě
   Future<PossibleFails> signup(String firstName, String lastName, String email) async {
     await completer.future;
     var company = ''; //optional
@@ -175,7 +206,8 @@ class BikramYoga {
     }
   }
 
-  List<Rezervace> parseRezervace(String id, String html) {
+  /// Zpracuje html a vrátí seznam rezervací
+  List<Rezervace> _parseRezervace(String id, String html) {
     List<Rezervace> rezervace = [];
     dom.Document document = parser.parse(html);
     late dom.Element pankrac;
@@ -244,7 +276,10 @@ class BikramYoga {
     return rezervace;
   }
 
-  //vrátí seznam rezervací
+  /// Získá seznam rezervací z bikramyoga.cz
+  /// Je potřeba být přihlášen.
+  /// Obsahuje rezervace z pankráce, vodičkovy a online lekcí
+  /// Odsaď je možné získat idRezervace pro rezervaci
   Future<RezervacePage> ziskatRezervace() async {
     await completer.future;
     Map<String, String> cookies = {
@@ -263,13 +298,14 @@ class BikramYoga {
     var response = await http.get(Uri.parse("https://www.bikramyoga.cz/rezervace"), headers: headers);
     //File("response.html").writeAsString(response.body);
     RezervacePage rezervacePage = RezervacePage(rezervace: {});
-    rezervacePage.rezervace['Pankrac'] = parseRezervace('Pankrac', response.body);
-    rezervacePage.rezervace['Vodickova'] = parseRezervace('Vodickova', response.body);
-    rezervacePage.rezervace['OnlineClass'] = parseRezervace('OnlineClass', response.body);
+    rezervacePage.rezervace['Pankrac'] = _parseRezervace('Pankrac', response.body);
+    rezervacePage.rezervace['Vodickova'] = _parseRezervace('Vodickova', response.body);
+    rezervacePage.rezervace['OnlineClass'] = _parseRezervace('OnlineClass', response.body);
     return rezervacePage;
   }
 
-  //vrátí true pokud se rezervace povedla jinak vrátí false
+  /// vrátí true pokud se rezervace povedla jinak vrátí false
+  /// rezervuje/zruší rezervaci u dané lekce
   Future<bool> rezervovat(int idRezervace) async {
     await completer.future;
     if (cookieEmail == '') return false;
