@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart' as dom;
 
-/// enumerátor možných chyb při registraci
+/// Enumerátor možných chyb při registraci
 enum PossibleFails {
   emailAlreadyExists,
   nameAlreadyExists,
@@ -13,14 +13,30 @@ enum PossibleFails {
   networkError,
 }
 
+/// Classa reprezentující jednoho uživatele
 class Uzivatel {
+  /// Jméno uživatele
   String jmeno;
+
+  /// Datum narození uživatele
   DateTime? datumNarozeni;
+
+  /// Adresa uživatele
   String adresa;
+
+  /// Země, odkud uživatel pochází
   String zeme;
+
+  /// Telefonní číslo uživatele
   int? telCislo;
+
+  /// Aktivní produkt uživatele
   String produkt;
+
+  /// Datum, kdy uživateli expiruje zakoupený produkt
   DateTime? produktExpirace;
+
+  /// True pokud má uživatel nabídku si platnost produktu prodloužit, jinak false
   bool produktProdlouzit;
   Uzivatel({
     required this.jmeno,
@@ -35,43 +51,38 @@ class Uzivatel {
 }
 
 /// classa reprezentující jednu rezervaci
-/// cas - datum a čas lekce
-/// lekce - název lekce
-/// lektor - jméno lektora
-/// idRezervace - id rezervace, pro rezervaci
-/// rezervovano - true pokud je lekce rezervována, jinak false
 class Rezervace {
-  /// datum a čas lekce
+  /// Datum a čas lekce
   DateTime cas;
 
-  /// lekce - název lekce
+  /// Název lekce
   String lekce;
 
-  /// jméno lektora
+  /// Jméno lektora
   String lektor;
 
-  /// id rezervace, pro rezervaci
-  int idRezervace;
+  /// ID lekce
+  int idLekce;
 
-  /// true pokud je lekce rezervována, jinak false
+  /// True pokud je lekce rezervována, jinak false
   bool rezervovano;
   Rezervace({
     required this.cas,
     required this.lekce,
     required this.lektor,
-    required this.idRezervace,
+    required this.idLekce,
     required this.rezervovano,
   });
 }
 
-/// classa poskytující všchny informace na stránce ohledně rezervací
+/// Classa poskytující všchny informace na stránce ohledně rezervací
 class RezervacePage {
-  //vodičkova, pankrác, live stream
+  // vodičkova, pankrác, live stream
   Map<String, List<Rezervace>> rezervace = {};
   RezervacePage({required this.rezervace});
 }
 
-/// classa pro komunikaci s bikramyoga.cz
+/// Classa pro komunikaci s bikramyoga.cz
 class BikramYoga {
   String phpsessid = '';
   String cookieEmail = '';
@@ -81,7 +92,7 @@ class BikramYoga {
     _doInitialRequest();
   }
 
-  /// provede inicializaci. Získá PHPSESSID, které nás identifikuje na serveru
+  /// Provede inicializaci. Získá PHPSESSID, které nás identifikuje na serveru
   Future<void> _doInitialRequest() async {
     try {
       Uri url = Uri.parse("https://www.bikramyoga.cz/");
@@ -108,21 +119,23 @@ class BikramYoga {
     }
   }
 
-  ///vráti true pokud se přihlášení povedlo jinak vrátí false
-  ///[email] email pro přihlášení
-  ///[password] heslo pro přihlášení
-  ///je potřeba zavolat před rezervací
+  /// Přihlášení na bikramyoga.cz
+  ///
+  /// [email] = email; [password]= heslo;
+  ///
+  /// Je potřeba zavolat před provedení rezervace lekce.
+  /// Vrátí true pokud se přihlášení povedlo, jinak false
   Future<bool> login(String email, String password) async {
     await completer.future;
     bool success = false;
     Uri url = Uri.parse("https://www.bikramyoga.cz/");
 
-    var headers = {
+    Map<String, String> headers = {
       "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
       "cookie": "PHPSESSID=$phpsessid",
     };
 
-    var body = {
+    Map<String, String> body = {
       "type": "login",
       "username": email,
       "password": password,
@@ -131,47 +144,53 @@ class BikramYoga {
     };
 
     var response = await http.post(url, headers: headers, body: body);
-    var login = response.headers["set-cookie"]!.split(";");
+    if (response.headers["set-cookie"] != null) {
+      List<String> login = response.headers["set-cookie"]!.split(";");
+      for (var kvPair in login) {
+        var kv = kvPair.split("=");
+        var key = kv[1].trim();
 
-    for (var kvPair in login) {
-      var kv = kvPair.split("=");
-      var key = kv[1].trim();
-
-      if (key.contains("login")) {
-        cookieEmail = kv[2];
-        success = true;
+        if (key.contains("login")) {
+          cookieEmail = kv[2];
+          success = true;
+        }
       }
     }
     return success;
   }
 
-  /// registrace na bikramyoga.cz
-  /// [firstName] křestní jméno
-  /// [lastName] příjmení
-  /// [email] email
-  /// vrátí PossibleFails.success pokud se registrace povedla
-  /// vrátí PossibleFails.emailAlreadyExists pokud se email již používá
-  /// vrátí PossibleFails.nameAlreadyExists pokud se jméno již používá
-  /// vrátí PossibleFails.networkError pokud se registrace nepovedla z důvodu sítě
+  /// Registrace na bikramyoga.cz
+  ///
+  /// [firstName] = křestní jméno;
+  /// [lastName] =  příjmení;
+  /// [email] =  email;
+  ///
+  /// Vrátí [PossibleFails.success] pokud se registrace povedla.
+  ///
+  /// Vrátí [PossibleFails.emailAlreadyExists] pokud se email již používá.
+  ///
+  /// Vrátí [PossibleFails.nameAlreadyExists] pokud se jméno již používá.
+  ///
+  /// Vrátí [PossibleFails.networkError] pokud se registrace nepovedla z důvodu sítě.
   Future<PossibleFails> signup(String firstName, String lastName, String email) async {
     await completer.future;
-    var company = ''; //optional
-    var adresa = ''; //optional
-    var postovniSmerovaciCislo = '';
-    var mesto = '';
-    var statCislo = '1'; //1 pro cz
-    var telefon = ''; //optional
-    var datumNarozeni = '';
-    var pohlaviNulaProMuzeJednaProZenu = '0';
-    var jakJsteSeONasDozvedeli = '';
+    String company = ''; //optional
+    String adresa = ''; //optional
+    String postovniSmerovaciCislo = '';
+    String mesto = '';
+    String statCislo = '1'; //1 pro cz
+    String telefon = ''; //optional
+    String datumNarozeni = '';
+    String pohlaviNulaProMuzeJednaProZenu = '0';
+    String jakJsteSeONasDozvedeli = '';
 
-    var headers = {
+    Map<String, String> headers = {
       HttpHeaders.contentTypeHeader: 'application/x-www-form-urlencoded; charset=UTF-8',
       HttpHeaders.cookieHeader: 'PHPSESSID=$phpsessid; comment=comment; web_lang=cs; ',
     };
-    var body =
+    String body =
         'bikram-yoga-register%5Bfirst_name%5D=$firstName&bikram-yoga-register%5Bsurname%5D=$lastName&bikram55-yoga-register%5Bcompany%5D=$company&bikram-yoga-register%5Baddress%5D=$adresa&bikram-yoga-register%5Bzip_code%5D=$postovniSmerovaciCislo&bikram-yoga-register%5Bcity%5D=$mesto&bikram-yoga-register%5Bid_sys_states%5D=$statCislo&bikram-yoga-register%5Bphone%5D=$telefon&bikram-yoga-register%5Bemail%5D=$email&bikram-yoga-register%5Bbirth_date%5D=$datumNarozeni&bikram-yoga-register%5Bgender%5D=$pohlaviNulaProMuzeJednaProZenu&bikram-yoga-register%5Breason%5D=$jakJsteSeONasDozvedeli';
-    var url = 'https://www.bikramyoga.cz/registrace/';
+    String url = 'https://www.bikramyoga.cz/registrace/';
 
     try {
       var request = await HttpClient().postUrl(Uri.parse(url));
@@ -206,7 +225,34 @@ class BikramYoga {
     }
   }
 
-  /// Zpracuje html a vrátí seznam rezervací
+  /// Získá seznam rezervací z bikramyoga.cz
+  ///
+  /// Je potřeba být přihlášen. [login]
+  Future<RezervacePage> ziskatRezervace() async {
+    await completer.future;
+    Map<String, String> cookies = {
+      "PHPSESSID": phpsessid,
+      "web_lang": "cs",
+      "login": Uri.parse(cookieEmail).toString(),
+    };
+
+    // Spojí cookies do jedné string
+    String cookieString = cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
+    // Vytvoří mapu kde ukládá headers
+    Map<String, String> headers = {
+      "authority": "www.bikramyoga.cz",
+      "cookie": cookieString,
+    };
+    var response = await http.get(Uri.parse("https://www.bikramyoga.cz/rezervace"), headers: headers);
+    //File("response.html").writeAsString(response.body);
+    RezervacePage rezervacePage = RezervacePage(rezervace: {});
+    rezervacePage.rezervace['Pankrac'] = _parseRezervace('Pankrac', response.body);
+    rezervacePage.rezervace['Vodickova'] = _parseRezervace('Vodickova', response.body);
+    rezervacePage.rezervace['OnlineClass'] = _parseRezervace('OnlineClass', response.body);
+    return rezervacePage;
+  }
+
+  /// Zpracuje html a vrátí seznam rezervací.
   List<Rezervace> _parseRezervace(String id, String html) {
     List<Rezervace> rezervace = [];
     dom.Document document = parser.parse(html);
@@ -225,7 +271,7 @@ class BikramYoga {
       String datum = child.children[0].text;
       String cas = child.children[2].text;
       String lekceLektor = child.children[3].text;
-      String idRezervace = child.children[4].children[0].attributes['data-id']!;
+      String idLekce = child.children[4].children[0].attributes['data-id']!;
       bool rezervovano = child.children[4].children[0].text == 'Rezervovat' ? false : true;
 
       DateTime casDateTime = DateTime(
@@ -263,12 +309,13 @@ class BikramYoga {
         lektor = posledniSlovo; // Poslední slovo je jméno lektora
       }
 
+      //Přidá rezervaci do listu
       rezervace.add(
         Rezervace(
           cas: casDateTime,
           lekce: lekce,
           lektor: lektor,
-          idRezervace: int.parse(idRezervace),
+          idLekce: int.parse(idLekce),
           rezervovano: rezervovano,
         ),
       );
@@ -276,37 +323,10 @@ class BikramYoga {
     return rezervace;
   }
 
-  /// Získá seznam rezervací z bikramyoga.cz
-  /// Je potřeba být přihlášen.
-  /// Obsahuje rezervace z pankráce, vodičkovy a online lekcí
-  /// Odsaď je možné získat idRezervace pro rezervaci
-  Future<RezervacePage> ziskatRezervace() async {
-    await completer.future;
-    Map<String, String> cookies = {
-      "PHPSESSID": phpsessid,
-      "web_lang": "cs",
-      "login": Uri.parse(cookieEmail).toString(),
-    };
-
-    // Combine the cookies into a single string
-    String cookieString = cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
-    // Create a Map to hold the headers
-    Map<String, String> headers = {
-      "authority": "www.bikramyoga.cz",
-      "cookie": cookieString,
-    };
-    var response = await http.get(Uri.parse("https://www.bikramyoga.cz/rezervace"), headers: headers);
-    //File("response.html").writeAsString(response.body);
-    RezervacePage rezervacePage = RezervacePage(rezervace: {});
-    rezervacePage.rezervace['Pankrac'] = _parseRezervace('Pankrac', response.body);
-    rezervacePage.rezervace['Vodickova'] = _parseRezervace('Vodickova', response.body);
-    rezervacePage.rezervace['OnlineClass'] = _parseRezervace('OnlineClass', response.body);
-    return rezervacePage;
-  }
-
-  /// vrátí true pokud se rezervace povedla jinak vrátí false
-  /// rezervuje/zruší rezervaci u dané lekce
-  Future<bool> rezervovat(int idRezervace) async {
+  /// Rezervuje/zruší rezervaci u dané lekce.
+  ///
+  /// Je potřeba získat [idLekce] pomocí [ziskatRezervace].
+  Future<bool> rezervovat(int idLekce) async {
     await completer.future;
     if (cookieEmail == '') return false;
     Map<String, String> cookies = {
@@ -328,7 +348,7 @@ class BikramYoga {
     // Create a Map to hold the cookies
 
     // Create the request body
-    String requestBody = "async=false&type=reserve&id=$idRezervace&request_uri=%2Frezervace%2F&url=Modules%2FBikramYoga%2FServer%2FAjax.php";
+    String requestBody = "async=false&type=reserve&id=$idLekce&request_uri=%2Frezervace%2F&url=Modules%2FBikramYoga%2FServer%2FAjax.php";
 
     // Create the HTTP client
     var client = http.Client();
@@ -348,7 +368,32 @@ class BikramYoga {
     }
   }
 
-  Uzivatel parseUzivatel(String html) {
+  /// Získá informace o uživateli z bikramyoga.cz
+  ///
+  /// Je potřeba být přihlášen. [login]
+  Future<Uzivatel> ziskatUdajeKlienta() async {
+    await completer.future;
+    Map<String, String> cookies = {
+      "PHPSESSID": phpsessid,
+      "web_lang": "cs",
+      "login": Uri.parse(cookieEmail).toString(),
+    };
+
+    // Combine the cookies into a single string
+    String cookieString = cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
+    // Vytvoří mapu kde ukládá headers
+    Map<String, String> headers = {
+      "authority": "www.bikramyoga.cz",
+      "cookie": cookieString,
+    };
+    var response = await http.get(Uri.parse("https://www.bikramyoga.cz/informace-o-uzivateli"), headers: headers);
+    //File("response.html").writeAsString(response.body);
+    Uzivatel uzivatel = _parseUzivatel(response.body);
+    return uzivatel;
+  }
+
+  /// Zpracuje html a vrátí list informací o uživateli.
+  Uzivatel _parseUzivatel(String html) {
     dom.Document document = parser.parse(html);
     late dom.Element uzivatelData;
     try {
@@ -371,6 +416,7 @@ class BikramYoga {
       produktProdlouzit = true;
     }
 
+    /// Pokud jsme získaly datumNarozeni tak převedeme na DateTime, jinak vracíme false
     DateTime? datumNarozeniDateTime;
     if (int.tryParse(datumNarozeni) != null) {
       datumNarozeniDateTime = DateTime(
@@ -380,6 +426,7 @@ class BikramYoga {
       );
     }
 
+    /// Pokud jsme získaly produktExpirace tak převedeme na DateTime, jinak vracíme false
     DateTime? datumExpiraceDateTime;
     if (produktExpirace.trim() != "No product") {
       datumExpiraceDateTime = DateTime(
@@ -390,34 +437,14 @@ class BikramYoga {
     }
 
     return Uzivatel(
-        jmeno: jmeno,
-        datumNarozeni: datumNarozeniDateTime,
-        adresa: adresa,
-        zeme: zeme,
-        telCislo: telCislo,
-        produkt: produkt,
-        produktExpirace: datumExpiraceDateTime,
-        produktProdlouzit: produktProdlouzit);
-  }
-
-  Future<Uzivatel> ziskatUdajeKlienta() async {
-    await completer.future;
-    Map<String, String> cookies = {
-      "PHPSESSID": phpsessid,
-      "web_lang": "cs",
-      "login": Uri.parse(cookieEmail).toString(),
-    };
-
-    // Combine the cookies into a single string
-    String cookieString = cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
-    // Create a Map to hold the headers
-    Map<String, String> headers = {
-      "authority": "www.bikramyoga.cz",
-      "cookie": cookieString,
-    };
-    var response = await http.get(Uri.parse("https://www.bikramyoga.cz/informace-o-uzivateli"), headers: headers);
-    //File("response.html").writeAsString(response.body);
-    Uzivatel uzivatel = parseUzivatel(response.body);
-    return uzivatel;
+      jmeno: jmeno,
+      datumNarozeni: datumNarozeniDateTime,
+      adresa: adresa,
+      zeme: zeme,
+      telCislo: telCislo,
+      produkt: produkt,
+      produktExpirace: datumExpiraceDateTime,
+      produktProdlouzit: produktProdlouzit,
+    );
   }
 }
