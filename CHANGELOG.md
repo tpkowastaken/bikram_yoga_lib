@@ -1,6 +1,13 @@
+## 0.3.1
+
+- Upravena dokumentace
+- Fix: [Issue #4](https://github.com/tpkowastaken/bikram_yoga_lib/issues/4)
+- Test: přidán test na neúspěšný login
+- Refactor: Typ promměnných [var] na specifické typy
+
 ## 0.3.0
 
-- Přidáno info o uživateli
+- Získávání informací o uživateli
 
 ## 0.2.0
 

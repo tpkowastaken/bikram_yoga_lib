@@ -1,6 +1,6 @@
 name: bikram_yoga_lib
-description: Knihovna pro komunikaci s bikram Yoga. Knihovna nabízí registraci, login, získání informací o lekcích...
-version: 0.3.0
+description: Knihovna pro komunikaci s bikram Yoga. Knihovna nabízí registraci, login, získání informací o lekcích a získání informací o přihlášeném uživateli
+version: 0.3.1
 repository: https://github.com/tpkowastaken/bikram_yoga_lib
 
 environment:
