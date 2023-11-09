@@ -50,8 +50,8 @@ class Uzivatel {
   });
 }
 
-/// classa reprezentující jednu rezervaci
-class Rezervace {
+/// Classa reprezentující jednu lekci
+class Lekce {
   /// Datum a čas lekce
   DateTime cas;
 
@@ -66,7 +66,7 @@ class Rezervace {
 
   /// True pokud je lekce rezervována, jinak false
   bool rezervovano;
-  Rezervace({
+  Lekce({
     required this.cas,
     required this.lekce,
     required this.lektor,
@@ -75,11 +75,39 @@ class Rezervace {
   });
 }
 
-/// Classa poskytující všchny informace na stránce ohledně rezervací
+/// Classa poskytující všechny informace na stránce ohledně rezervací
 class RezervacePage {
-  // vodičkova, pankrác, live stream
-  Map<String, List<Rezervace>> rezervace = {};
+  // Lekce se zde
+  Map<String, List<Lekce>> rezervace = {};
   RezervacePage({required this.rezervace});
+}
+
+/// Classa reprezentující jednu novinku
+class Novinka {
+  /// Nadpis novinky
+  String nadpis;
+
+  /// Popis novinky
+  String? popis;
+
+  /// Odkaz na novinku
+  Uri url;
+
+  /// Datum vydání novinky
+  DateTime? datumVydani;
+
+  Novinka({
+    required this.nadpis,
+    this.popis,
+    required this.url,
+    this.datumVydani,
+  });
+}
+
+/// Classa poskytující všechny aktuální novinky na stránce
+class NovinkyPage {
+  List<Novinka> novinky = [];
+  NovinkyPage({required this.novinky});
 }
 
 /// Classa pro komunikaci s bikramyoga.cz
@@ -225,10 +253,10 @@ class BikramYoga {
     }
   }
 
-  /// Získá seznam rezervací z bikramyoga.cz
+  /// Získá seznam lekcí z bikramyoga.cz
   ///
   /// Je potřeba být přihlášen. [login]
-  Future<RezervacePage> ziskatRezervace() async {
+  Future<RezervacePage> ziskatLekce() async {
     await completer.future;
     Map<String, String> cookies = {
       "PHPSESSID": phpsessid,
@@ -244,17 +272,17 @@ class BikramYoga {
       "cookie": cookieString,
     };
     var response = await http.get(Uri.parse("https://www.bikramyoga.cz/rezervace"), headers: headers);
-    //File("response.html").writeAsString(response.body);
+
     RezervacePage rezervacePage = RezervacePage(rezervace: {});
-    rezervacePage.rezervace['Pankrac'] = _parseRezervace('Pankrac', response.body);
-    rezervacePage.rezervace['Vodickova'] = _parseRezervace('Vodickova', response.body);
-    rezervacePage.rezervace['OnlineClass'] = _parseRezervace('OnlineClass', response.body);
+    rezervacePage.rezervace['Pankrac'] = _parseLekce('Pankrac', response.body);
+    rezervacePage.rezervace['Vodickova'] = _parseLekce('Vodickova', response.body);
+    rezervacePage.rezervace['OnlineClass'] = _parseLekce('OnlineClass', response.body);
     return rezervacePage;
   }
 
-  /// Zpracuje html a vrátí seznam rezervací.
-  List<Rezervace> _parseRezervace(String id, String html) {
-    List<Rezervace> rezervace = [];
+  /// Zpracuje html a vrátí seznam lekcí.
+  List<Lekce> _parseLekce(String id, String html) {
+    List<Lekce> rezervace = [];
     dom.Document document = parser.parse(html);
     late dom.Element pankrac;
     try {
@@ -309,9 +337,9 @@ class BikramYoga {
         lektor = posledniSlovo; // Poslední slovo je jméno lektora
       }
 
-      //Přidá rezervaci do listu
+      //Přidá lekci do listu
       rezervace.add(
-        Rezervace(
+        Lekce(
           cas: casDateTime,
           lekce: lekce,
           lektor: lektor,
@@ -325,7 +353,7 @@ class BikramYoga {
 
   /// Rezervuje/zruší rezervaci u dané lekce.
   ///
-  /// Je potřeba získat [idLekce] pomocí [ziskatRezervace].
+  /// Je potřeba získat [idLekce] pomocí [ziskatLekce].
   Future<bool> rezervovat(int idLekce) async {
     await completer.future;
     if (cookieEmail == '') return false;
@@ -387,7 +415,7 @@ class BikramYoga {
       "cookie": cookieString,
     };
     var response = await http.get(Uri.parse("https://www.bikramyoga.cz/informace-o-uzivateli"), headers: headers);
-    //File("response.html").writeAsString(response.body);
+
     Uzivatel uzivatel = _parseUzivatel(response.body);
     return uzivatel;
   }
@@ -416,7 +444,7 @@ class BikramYoga {
       produktProdlouzit = true;
     }
 
-    /// Pokud jsme získaly datumNarozeni tak převedeme na DateTime, jinak vracíme false
+    /// Pokud jsme získaly datumNarozeni tak převedeme na DateTime, jinak vracíme null
     DateTime? datumNarozeniDateTime;
     if (int.tryParse(datumNarozeni) != null) {
       datumNarozeniDateTime = DateTime(
@@ -426,7 +454,7 @@ class BikramYoga {
       );
     }
 
-    /// Pokud jsme získaly produktExpirace tak převedeme na DateTime, jinak vracíme false
+    /// Pokud jsme získaly produktExpirace tak převedeme na DateTime, jinak vracíme null
     DateTime? datumExpiraceDateTime;
     if (produktExpirace.trim() != "No product") {
       datumExpiraceDateTime = DateTime(
@@ -446,5 +474,149 @@ class BikramYoga {
       produktExpirace: datumExpiraceDateTime,
       produktProdlouzit: produktProdlouzit,
     );
+  }
+
+  Future<NovinkyPage> ziskatNovinky() async {
+    await completer.future;
+    Map<String, String> cookies = {
+      "PHPSESSID": phpsessid,
+      "web_lang": "cs",
+      "login": Uri.parse(cookieEmail).toString(),
+    };
+
+    // Spojí cookies do jedné string
+    String cookieString = cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
+    // Vytvoří mapu kde ukládá headers
+    Map<String, String> headers = {
+      "authority": "www.bikramyoga.cz",
+      "cookie": cookieString,
+    };
+
+    var response = await http.get(Uri.parse("https://www.bikramyoga.cz/novinky/"), headers: headers);
+    int numberOfPages = _ziskatPocetStranNovinek(response.body);
+
+    /// Získáme jednotlivé novinky a přidáme do listu
+    NovinkyPage novinkyPage = NovinkyPage(novinky: []);
+    for (int i = 1; i <= numberOfPages; i++) {
+      var response = await http.get(Uri.parse("https://www.bikramyoga.cz/novinky/$i/"), headers: headers);
+      novinkyPage.novinky.addAll(_parseNovinky(response.body));
+    }
+
+    return novinkyPage;
+  }
+
+  ///Získá počet stránek novinek
+  int _ziskatPocetStranNovinek(String html) {
+    dom.Document document = parser.parse(html);
+    late List<dom.Element> novinkyData;
+    try {
+      novinkyData = document.getElementsByClassName("Pagelist");
+    } catch (e) {
+      throw ('Chyba při získání novinek');
+    }
+
+    // Odstraníme nepotřebé
+    novinkyData[0].firstChild?.remove();
+    novinkyData[0].children.removeLast();
+    novinkyData[0].children.removeLast();
+
+    return novinkyData[0].children.length;
+  }
+
+  ///Zpracuje html a vrátí list novinek
+  List<Novinka> _parseNovinky(String html) {
+    List<Novinka> novinky = [];
+
+    dom.Document document = parser.parse(html);
+    late dom.Element novinkyData;
+    try {
+      novinkyData = document.getElementById("news")!;
+    } catch (e) {
+      throw ('Chyba při získání novinek');
+    }
+
+    // Odstranění zbytečného divu a listu stránek
+    novinkyData.children[0].children.removeLast();
+    novinkyData.children[0].children.removeLast();
+
+    for (int i = 0; i < novinkyData.children[0].children.length; i++) {
+      dom.Element child = novinkyData.children[0].children[i];
+
+      // Nadpis novinky
+      if (child.children.length > 2) {
+        child.children[0].remove();
+        child.children.removeLast();
+      } else if (child.children.length > 1) {
+        child.children.removeLast();
+      }
+
+      String nadpis = child.children[0].children[0].text;
+      String urlString = "1";
+      if (child.children[0].children[0].children.isNotEmpty) {
+        urlString = child.children[0].children[0].children[0].attributes.entries.first.value.toString();
+      } else {
+        urlString = _ziskatUrlNovinekZNavigace(html, nadpis);
+      }
+
+      DateTime? datumVydaniDateTime;
+      String? popis;
+
+      // Pokud je jenom 1 child tak to znamena ze je jenom nadpis
+      if (child.children[0].children.length > 1) {
+        // Datum novinky
+        if (child.children[0].children[1].attributes.entries.first.toString() == "MapEntry(class: Date)") {
+          String datumVydani = child.children[0].children[1].text;
+          if (datumVydani.isNotEmpty) {
+            datumVydaniDateTime = DateTime(
+              int.parse(datumVydani.split('.')[2]),
+              int.parse(datumVydani.split('.')[1]),
+              int.parse(datumVydani.split('.')[0]),
+            );
+          }
+        } else {
+          // Popis novinky
+          if (1 < child.children[0].children[1].children.length) {
+            // Když je popisek <div> s children <p>
+            child.children[0].children[1].children[0].remove();
+            child.children[0].children[1].children[0].remove();
+            popis = child.children[0].children[1].children[0].text;
+          } else {
+            // Když je popisek pouze <p>
+            popis = child.children[0].children[1].text.trim();
+          }
+        }
+      }
+
+      Uri url = Uri.parse("https://www.bikramyoga.cz$urlString");
+
+      novinky.add(Novinka(
+        nadpis: nadpis,
+        popis: popis,
+        url: url,
+        datumVydani: datumVydaniDateTime,
+      ));
+    }
+    return novinky;
+  }
+
+  /// Tady získáváme odkazy na novinky které nemají odkaz na stránce novinek, ale jenom v main menu...
+  String _ziskatUrlNovinekZNavigace(String html, String nadpis) {
+    dom.Document document = parser.parse(html);
+    late dom.Element novinkyData;
+    try {
+      novinkyData = document.getElementById("main-menu")!;
+    } catch (e) {
+      throw ('Chyba při získání novinek');
+    }
+    dom.Element child = novinkyData.children[0].children[0].children.first.children[1].children[0];
+
+    /// Když i tak nenajdeme odkaz na novinku, tak uživatele pošleme na všechny novinky
+    String url = "/novinky/";
+    for (int i = 0; i < child.children.length; i++) {
+      if (child.children[i].text.trim().toUpperCase() == nadpis.trim().toUpperCase()) {
+        url = child.children[i].children[0].attributes.entries.first.value.toString();
+      }
+    }
+    return url;
   }
 }
