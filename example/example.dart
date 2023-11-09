@@ -15,10 +15,10 @@ Future<void> main() async {
   await bikramYoga.login(email, password);
 
   //Získání listů lekcí
-  RezervacePage rezervace = await bikramYoga.ziskatRezervace();
+  RezervacePage rezervace = await bikramYoga.ziskatLekce();
   print('Pankrac');
   for (int i = 0; i < rezervace.rezervace['Pankrac']!.length; i++) {
-    Rezervace rezervaceItem = rezervace.rezervace['Pankrac']![i];
+    Lekce rezervaceItem = rezervace.rezervace['Pankrac']![i];
     print('${rezervaceItem.cas}: ${rezervaceItem.lekce}, ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idLekce}');
     if (i == rezervace.rezervace['Pankrac']!.length - 1) {
       await bikramYoga.rezervovat(rezervaceItem.idLekce);
@@ -26,12 +26,12 @@ Future<void> main() async {
   }
   print('Vodickova');
   for (int i = 0; i < rezervace.rezervace['Vodickova']!.length; i++) {
-    Rezervace rezervaceItem = rezervace.rezervace['Vodickova']![i];
+    Lekce rezervaceItem = rezervace.rezervace['Vodickova']![i];
     print('${rezervaceItem.cas}: ${rezervaceItem.lekce}, ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idLekce}');
   }
   print('Online');
   for (int i = 0; i < rezervace.rezervace['OnlineClass']!.length; i++) {
-    Rezervace rezervaceItem = rezervace.rezervace['OnlineClass']![i];
+    Lekce rezervaceItem = rezervace.rezervace['OnlineClass']![i];
     print('${rezervaceItem.cas}: ${rezervaceItem.lekce}, ${rezervaceItem.lektor}, ${rezervaceItem.rezervovano}, ${rezervaceItem.idLekce}');
   }
 
@@ -45,4 +45,11 @@ Future<void> main() async {
   print("Produkt: ${uzivatel.produkt}");
   print("Expirace: ${uzivatel.produktExpirace}");
   print("Prodloužit?: ${uzivatel.produktProdlouzit}");
+
+  // Získání novinek
+  NovinkyPage novinky = await bikramYoga.ziskatNovinky();
+  for (int i = 0; i < novinky.novinky.length; i++) {
+    Novinka novinkyItem = novinky.novinky[i];
+    print("${novinkyItem.nadpis}; ${novinkyItem.popis}; ${novinkyItem.datumVydani}; ${novinkyItem.url}");
+  }
 }

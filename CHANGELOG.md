@@ -1,3 +1,7 @@
+## 0.4.0
+
+- Získávání novinek
+
 ## 0.3.1
 
 - Upravena dokumentace

@@ -1,1 +1,1 @@
-Knihovna pro komunikaci s bikram Yoga
+Knihovna pro komunikaci s [bikramyoga.cz](https://www.bikramyoga.cz/)
